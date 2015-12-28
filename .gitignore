@@ -1,2 +1,5 @@
 build.properties
 build
+connection-info.js
+force-meta-backup.groovy
+node_modules
