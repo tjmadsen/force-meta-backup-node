@@ -14,14 +14,14 @@
     <attribute name="args" default="" />
 
     <sequential>
-      <property name="force.meta.backup.script" value="force-meta-backup.groovy" />
+      <property name="force.meta.backup.script" value="force-meta-backup.js" />
 
-      <exec osfamily="unix" executable="${force.meta.backup.script}" resolveexecutable="true" failonerror="true">
-        <arg line="@{args}" />
+      <exec osfamily="unix" executable="node"  failonerror="true">
+        <arg line="${force.meta.backup.script} @{args}" />
       </exec>
 
       <exec osfamily="windows" executable="cmd" failonerror="true">
-        <arg line="/c ${env.GROOVY_HOME}/bin/groovy.bat ${force.meta.backup.script} @{args}" />
+        <arg line="/c node ${force.meta.backup.script} @{args}" />
       </exec>
     </sequential>
   </macrodef>
@@ -50,7 +50,7 @@
     <antcall target="xmlMergeProfilesAndPermissions" />
   </target>
 
-  <target name="backupMetadata" depends="clean,bulkRetrievable,bulkRetrieveFolders,retrieveMiscMetadata">
+  <target name="backupMetadata" depends="clean,bulkRetrievable">
   </target>
 
   <target name="xmlMergeProfilesAndPermissions">

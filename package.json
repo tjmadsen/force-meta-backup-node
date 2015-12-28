@@ -1,0 +1,25 @@
+{
+  "name": "force-meta-backup-node",
+  "version": "1.0.0",
+  "description": "",
+  "author": "TJ Madsen <tjmadsen@gmail.com>",
+  "contributors": [],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://ithub.com/tjmadsen/force-meta-backup-node.git"
+  },
+  
+  "dependencies": {
+    "adm-zip": "^0.4.7",
+    "archiver": "^0.16.0",
+    "bluebird": "^2.10.2",
+    "delayed": "^1.0.1",
+    "lodash": "^3.5.0",
+    "nforce": "^1.2.3",
+    "nforce-metadata": "^1.0.5",
+    "nforce-tooling": "0.0.4",
+    "xml": "1.0.0",
+    "xmlbuilder": "4.2.0"
+  }
+}
