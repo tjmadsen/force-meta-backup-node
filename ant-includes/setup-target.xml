@@ -11,5 +11,9 @@
   <target name="-setUpMetadataDir" depends="-setUp">
     <property name="build.metadata.dir" value="${build.dir}/metadata" />
     <mkdir dir="${build.metadata.dir}" />
+    <property name="build.profile-packages.dir" value="${build.dir}/profile-packages" />
+    <mkdir dir="${build.profile-packages.dir}" />
+    <property name="build.profile-packages-metadata.dir" value="${build.dir}/profile-packages-metadata" />
+    <mkdir dir="${build.profile-packages-metadata.dir}" />
   </target>
 </project>

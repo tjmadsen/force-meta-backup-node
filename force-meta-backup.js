@@ -4,9 +4,11 @@ var builder = require('xmlbuilder');
 var nforce = require('nforce'),
   meta = require('nforce-metadata')(nforce);
 
-var fs = require('fs');
+var _        = require('lodash');
+var util     = require('util');
+var fs       = require('fs');
 
-require('connection-info.js');
+var connection = require('./connection-info.js');
 
 
 var bulkMetadataManifestBuilder = function(){
@@ -109,7 +111,7 @@ var bulkMetadataManifestBuilder = function(){
             bulkRetrieve.att('username', '${sf.username}');
             bulkRetrieve.att('password', '${sf.password}');
             bulkRetrieve.att('serverurl', '${sf.serverurl}');
-            if(TYPES[i] == 'CustomMetadata' || TYPES[i] == 'InstalledPackage'){
+            if(TYPES[i] == 'CustomMetadata' || TYPES[i] == 'InstalledPackage' || TYPES[i] == 'ApexTrigger'){
                 bulkRetrieve.att('batchSize', '${small.batchSize}');
                 bulkRetrieve.att('pollWaitMillis', '${small.pollWaitMillis}');
                 bulkRetrieve.att('maxPoll', '${small.maxPoll}');
@@ -141,161 +143,148 @@ var miscMetadataManifestBuilder = function(){
 
 var profilesMetadataManifestBuilder = function(){
 
-    static final TYPES = [
-        'ApexClass',
-        'ApexPage',
-        'CustomApplication',
-        'CustomObject',
-        'CustomObjectTranslation',
-        // 'CustomPermission',
-        'CustomTab',
-        // 'ExternalDataSource',
-        'Layout'
+    const TYPES = [
+        { type: 'ApexClass' },
+        { type: 'ApexPage' },
+        // { type: 'CustomApplication' },
+        { type: 'CustomObject' },
+        // { type: 'CustomObjectTranslation' },
+        // { type: 'CustomPermission' },
+        // { type: 'CustomTab' },
+        // { type: 'ExternalDataSource' },
+        // { type: 'Layout' }
     ]
 
-    static final PERMISSON_TYPES = [
+    var PERMISSON_TYPES = [
         'Profile',
         'PermissionSet'
     ]
 
 
     var org = nforce.createConnection({
-      clientId: connectionInfo.clientId,
-      clientSecret: connectionInfo.clientSecret,
-      redirectUri: connectionInfo.redirectUri,
-      apiVersion: connectionInfo.apiVersion,  
-      environment: connectionInfo.environment, 
-      mode: connectionInfo.mode,
-      username: connectionInfo.username,
-      password: connectionInfo.password,
+      clientId: connection.info.clientId,
+      clientSecret: connection.info.clientSecret,
+      redirectUri: connection.info.redirectUri,
+      apiVersion: connection.info.apiVersion,  
+      environment: connection.info.environment, 
+      mode: connection.info.mode,
+      username: connection.info.username,
+      password: connection.info.password,
       plugins: ['meta'],
       metaOpts: {
         pollInterval: 1000
       }
     });
 
+    var items = {};
+
     org.authenticate().then(function(){
         return org.meta.listMetadata({
-            queries: [
-                { type: 'CustomObject' },
-                { type: 'CustomField' },
-                { type: 'ApexClass' }
-            ]
+            queries: TYPES
         }); 
     }).then(function(meta) {
         _.each(meta, function(r) {
-            console.log(r.type + ': ' + r.fullName + ' (' + r.fileName + ')');
+            if(!(r.type in items)){
+                items[r.type] = [];
+            }
+            if(r.type == 'Layout' && !('RecordType' in PERMISSON_TYPES)){
+                PERMISSON_TYPES.push('RecordType')
+            }
+            items[r.type].push(r);
+            //console.log(r.type + ': ' + r.fullName + ' (' + r.fileName + ')');
         });
+
+        _.each(items, function(val, key) {
+            items[key] = _.sortBy(val, ["namespacePrefix", "fullName"]);
+        });
+
+        writePackageXmlForType();
     }).error(function(err) {
         console.error(err);
     });
 
-    ProfilesMetadataManifestBuilder(ForceService forceService, config) {
-        this.forceService = forceService
-        this.config = config
-    }
 
-    private getGroupedFileProperties() {
-        if (groupedFileProps == null) {
+
+    var writePackageXmlForType = function() {
+
+        var root = builder.create('Package', {version: '1.0', encoding: 'UTF-8'}, {}, {headless:false});
+
+        root.att('xmlns','http://soap.sforce.com/2006/04/metadata');
+
+        _.each(items,function(list, type){
+            var target = root.ele('types');
+            _.each(list,function(item, i){
+                if (type == 'Layout' && item.namespacePrefix && item.namespacePrefix !== null && item.namespacePrefix != '') {
+                    var namespace = item.namespacePrefix + '__'
+                    var seperator = '-'
+                    item.fullName = item.fullName.replace(seperator, seperator + namespace)
+                }
+                target.ele('members',{}, item.fullName);    
+            });
+            target.ele('name',{}, type);
+
+            _.each(PERMISSON_TYPES,function(type,i){
+                var target = root.ele('types');
+                target.ele('members',{}, '*');    
+                target.ele('name',{}, type);
+            });
+
+            root.ele('version',{}, '35.0');
+
+            var xmlString = root.end({ pretty: true, indent: '  ', newline: '\n' });
             
-            def queries = TYPES.collect { type ->
-                forceService.withValidMetadataType(type) {
-                    def query = new ListMetadataQuery()
-                    query.type = it
-                    query
+            fs.writeFile("build/profile-packages/"+type+".xml", xmlString, function(err) {
+                if(err) {
+                    return console.log(err);
                 }
+
+                console.log("build/profile-packages/"+type+".xml"+" was saved!");
+            }); 
+        });
+        writeBuildXml();
+    };
+
+    var writeBuildXml = function(){    
+        var root = builder.create('project', {}, {}, {headless:true});
+
+        root.att('xmlns:sf','antlib:com.salesforce').att('default','profilesPackageRetrieve');
+
+        root.ele('property').att('file', 'build.properties');
+        root.ele('property').att('file', 'ant-includes/default.properties');
+        root.ele('property').att('name', 'build.dir').att('value', 'build');
+
+        var setup = root.ele('target').att('name', '-setUp');
+            setup.ele('mkdir').att('dir', '${build.dir}');
+
+        var setUpMetadataDir = root.ele('target').att('name', '-setUpMetadataDir').att('depends', '-setUp')
+            setUpMetadataDir.ele('property').att('name', 'build.metadata.dir').att('value', '${build.dir}/metadata');
+            setUpMetadataDir.ele('mkdir').att('dir', '${build.dir}');
+
+        
+        var target = root.ele('target').att('name', 'profilesPackageRetrieve').att('depends', '-setUpMetadataDir');
+        _.each(items,function(list, type){
+            var bulkRetrieve = target.ele('sf:retrieve');
+                bulkRetrieve.att('unpackaged', "build/profile-packages/"+type+".xml");
+                bulkRetrieve.att('retrieveTarget', '${build.metadata.dir}');
+                bulkRetrieve.att('username', '${sf.username}');
+                bulkRetrieve.att('password', '${sf.password}');
+                bulkRetrieve.att('serverurl', '${sf.serverurl}');
+                bulkRetrieve.att('pollWaitMillis', '${sf.pollWaitMillis}');
+                bulkRetrieve.att('maxPoll', '${sf.maxPoll}');
+        });
+
+        var xmlString = root.end({ pretty: true, indent: '  ', newline: '\n' });
+        
+        fs.writeFile("build/profile-packages-target.xml", xmlString, function(err) {
+            if(err) {
+                return console.log(err);
             }
-            queries.removeAll([null])
 
-            def grouped = [:]
-
-            forceService.listMetadata(queries).each { fileProperties ->
-                def type = fileProperties.type
-
-                if (!grouped.containsKey(type)) {
-                    grouped[type] = []
-                }
-
-                grouped[type] << fileProperties
-            }
-
-            grouped.each { k, v ->
-                v.sort { a, b ->
-                    a.namespacePrefix <=> b.namespacePrefix ?: a.fullName <=> b.fullName
-                }
-            }
-
-            groupedFileProps = grouped
-        }
-
-        groupedFileProps
-    }
-
-    def writePackageXmlForType(type, fileProperties) {
-        def builder = new StreamingMarkupBuilder()
-        builder.encoding = 'UTF-8'
-
-        def resolveName = { FileProperties fp ->
-            fp.fullName
-        }
-
-        def WILDCARD_TYPES = [] + PERMISSON_TYPES;
-
-        if (type == 'Layout') {
-            // Note: Page Layout assignments require Layouts & RecordType to be retrieved with Profile 
-            WILDCARD_TYPES << 'RecordType'
-
-            // Layouts in managed pacakges must have namespace prefix
-            resolveName = { FileProperties fp ->
-                if (fp.namespacePrefix) {
-                    def namespace = fp.namespacePrefix + '__'
-                    def seperator = '-'
-
-                    return fp.fullName.replace(seperator, seperator + namespace)
-                }
-
-                fp.fullName
-            }
-        }
-
-        def xml = builder.bind {
-            mkp.xmlDeclaration()
-            Package(xmlns: 'http://soap.sforce.com/2006/04/metadata') {
-                types {
-                    fileProperties.each { fp ->
-                        members resolveName(fp)
-                    }
-
-                    name type
-                }
-
-                WILDCARD_TYPES.each { metadataType ->
-                    types {
-                        members '*'
-                        name metadataType
-                    }
-                }
-
-                version { mkp.yield forceService.apiVersion }
-            }
-        }
-
-        def writer = FileWriterFactory.create(profilePackageXmlPath(type))
-        XmlUtil.serialize(xml, writer)
-    }
-
-    def writePackageXml() {
-        groupedFileProperties.each { type, fileProperties ->
-            writePackageXmlForType type, fileProperties
-        }
-
-        writeBuildXml()
-    }
-
-    private profilePackageXmlPath(type) {
-        "${config['build.dir']}/profile-packages/${type}.xml"
-    }
-
+            console.log("profile-packages-target.xml was saved!");
+        }); 
+    };
+    
+    /*
     private writeBuildXml() {
         def writer = FileWriterFactory.create("${config['build.dir']}/profile-packages-target.xml")
         def builder = new MarkupBuilder(writer)
@@ -327,7 +316,9 @@ var profilesMetadataManifestBuilder = function(){
         }
     }
 
+    */
 }
+
 /*
 class Folders {
     def forceService
@@ -731,7 +722,9 @@ class ProfilesMetadataManifestBuilder {
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bulkMetadataManifestBuilder();   
+bulkMetadataManifestBuilder();  
+
+profilesMetadataManifestBuilder(); 
 
     // Default Action
 /*

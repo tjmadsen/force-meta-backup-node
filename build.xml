@@ -30,7 +30,7 @@
     <delete dir="${build.dir}" />
   </target>
 
-  <target name="generatePackageXmlAndBuildXml" depends="-setUp">
+  <target name="generatePackageXmlAndBuildXml" depends="-setUp, -setUpMetadataDir">
     <forceMetaBackup />
   </target>
 
