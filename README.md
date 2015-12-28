@@ -36,6 +36,7 @@ v0.12.2
 ```
 
 ## Usage
+- Run `npm install`
 - Copy `build.sample.properties` to `build.properties`
 - Edit `build.properties` and specify your Salesforce credentials
 - Copy `connection-info.sample.js` to `connection-info.js`
