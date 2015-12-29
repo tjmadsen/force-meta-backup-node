@@ -180,10 +180,7 @@ var profilesMetadataManifestBuilder = function(){
 
     org.authenticate().then(function(){
         return org.meta.listMetadata({
-            queries: TYPES,
-            requestOpts: {
-                proxy: {...}
-              }
+            queries: TYPES
         }); 
     }).then(function(meta) {
         _.each(meta, function(r) {
