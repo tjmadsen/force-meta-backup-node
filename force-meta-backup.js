@@ -144,8 +144,8 @@ var miscMetadataManifestBuilder = function(){
 var profilesMetadataManifestBuilder = function(){
 
     const TYPES = [
-        { type: 'ApexClass' },
-        { type: 'ApexPage' },
+        // { type: 'ApexClass' },
+        // { type: 'ApexPage' },
         { type: 'CustomApplication' },
         // { type: 'CustomObject' },
         // { type: 'CustomObjectTranslation' },
