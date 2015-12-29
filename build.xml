@@ -42,6 +42,10 @@
     <ant antfile="${build.dir}/folders-build.xml" />
   </target>
 
+  <target name="bulkRetrieveOther" depends="generatePackageXmlAndBuildXml">
+    <ant antfile="${build.dir}/profile-packages-target.xml" />
+  </target>
+
   <target name="retrieveMiscMetadata" depends="generatePackageXmlAndBuildXml,-setUpMetadataDir">
     <antcall target="-sfRetrieve"><param name="unpackaged" value="${build.dir}/misc-package.xml" /></antcall>
 
@@ -50,7 +54,7 @@
     <antcall target="xmlMergeProfilesAndPermissions" />
   </target>
 
-  <target name="backupMetadata" depends="clean,bulkRetrievable">
+  <target name="backupMetadata" depends="clean,bulkRetrievable, bulkRetrieveOther">
   </target>
 
   <target name="xmlMergeProfilesAndPermissions">

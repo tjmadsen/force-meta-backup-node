@@ -18,7 +18,7 @@ var bulkMetadataManifestBuilder = function(){
     const TYPES = [
         // 'ActionLinkGroupTemplate',
         // 'AnalyticSnapshot',
-        // 'ApexComponent',
+        'ApexComponent',
         'ApexTrigger',
         // 'AppMenu',
         // 'ApprovalProcess',
@@ -33,7 +33,7 @@ var bulkMetadataManifestBuilder = function(){
         // 'CorsWhitelistOrigin',
         // 'CustomApplicationComponent',
         // 'CustomFeedFilter',
-        // 'CustomLabels',
+        'CustomLabels',
         'CustomMetadata',
         // 'CustomPageWebLink',
         // 'CustomSite',
@@ -43,7 +43,7 @@ var bulkMetadataManifestBuilder = function(){
         // 'EscalationRules',
         // 'FlexiPage',
         // 'FlowDefinition',
-        // 'Group',
+        'Group',
         // 'HomePageComponent',
         // 'HomePageLayout',
         'InstalledPackage',
@@ -60,15 +60,15 @@ var bulkMetadataManifestBuilder = function(){
         // 'PlatformCachePartition',
         // 'Portal',
         // 'PostTemplate',
-        // 'Queue',
+        'Queue',
         // 'QuickAction',
         // 'RemoteSiteSetting',
-        // 'ReportType',
-        // 'Role',
+        'ReportType',
+        'Role',
         // 'SamlSsoConfig',
         // 'Scontrol',
         // 'Settings',
-        // 'SharingRules',
+        'SharingRules',
         // 'SharingSet',
         // 'SiteDotCom',
         // 'Skill',
@@ -81,7 +81,7 @@ var bulkMetadataManifestBuilder = function(){
         // 'Territory2Settings',
         // 'Territory2Type',
         // 'TransactionSecurityPolicy',
-        // 'Workflow',
+        'Workflow',
         // 'XOrgHub',
         // 'XOrgHubSharedObject'
     ]
@@ -111,7 +111,7 @@ var bulkMetadataManifestBuilder = function(){
             bulkRetrieve.att('username', '${sf.username}');
             bulkRetrieve.att('password', '${sf.password}');
             bulkRetrieve.att('serverurl', '${sf.serverurl}');
-            if(TYPES[i] == 'CustomMetadata' || TYPES[i] == 'InstalledPackage' || TYPES[i] == 'ApexTrigger'){
+            if(TYPES[i] == 'CustomMetadata' || TYPES[i] == 'InstalledPackage'){
                 bulkRetrieve.att('batchSize', '${small.batchSize}');
                 bulkRetrieve.att('pollWaitMillis', '${small.pollWaitMillis}');
                 bulkRetrieve.att('maxPoll', '${small.maxPoll}');
@@ -146,11 +146,11 @@ var profilesMetadataManifestBuilder = function(){
     const TYPES = [
         { type: 'ApexClass' },
         { type: 'ApexPage' },
-        // { type: 'CustomApplication' },
-        { type: 'CustomObject' },
+        { type: 'CustomApplication' },
+        // { type: 'CustomObject' },
         // { type: 'CustomObjectTranslation' },
         // { type: 'CustomPermission' },
-        // { type: 'CustomTab' },
+        { type: 'CustomTab' },
         // { type: 'ExternalDataSource' },
         // { type: 'Layout' }
     ]
@@ -180,7 +180,10 @@ var profilesMetadataManifestBuilder = function(){
 
     org.authenticate().then(function(){
         return org.meta.listMetadata({
-            queries: TYPES
+            queries: TYPES,
+            requestOpts: {
+                proxy: {...}
+              }
         }); 
     }).then(function(meta) {
         _.each(meta, function(r) {
@@ -256,16 +259,16 @@ var profilesMetadataManifestBuilder = function(){
         var setup = root.ele('target').att('name', '-setUp');
             setup.ele('mkdir').att('dir', '${build.dir}');
 
-        var setUpMetadataDir = root.ele('target').att('name', '-setUpMetadataDir').att('depends', '-setUp')
-            setUpMetadataDir.ele('property').att('name', 'build.metadata.dir').att('value', '${build.dir}/metadata');
-            setUpMetadataDir.ele('mkdir').att('dir', '${build.dir}');
+        var setUpMetadataDir = root.ele('target').att('name', '-setUpProfileMetadataDir').att('depends', '-setUp')
+            setUpMetadataDir.ele('property').att('name', 'build.profile.metadata.dir').att('value', '${build.dir}/profile-packages-metadata');
+            setUpMetadataDir.ele('mkdir').att('dir', '${build.profile.metadata.dir}');
 
         
-        var target = root.ele('target').att('name', 'profilesPackageRetrieve').att('depends', '-setUpMetadataDir');
+        var target = root.ele('target').att('name', 'profilesPackageRetrieve').att('depends', '-setUpProfileMetadataDir');
         _.each(items,function(list, type){
             var bulkRetrieve = target.ele('sf:retrieve');
                 bulkRetrieve.att('unpackaged', "build/profile-packages/"+type+".xml");
-                bulkRetrieve.att('retrieveTarget', '${build.metadata.dir}');
+                bulkRetrieve.att('retrieveTarget', '${build.profile.metadata.dir}');
                 bulkRetrieve.att('username', '${sf.username}');
                 bulkRetrieve.att('password', '${sf.password}');
                 bulkRetrieve.att('serverurl', '${sf.serverurl}');
@@ -284,39 +287,6 @@ var profilesMetadataManifestBuilder = function(){
         }); 
     };
     
-    /*
-    private writeBuildXml() {
-        def writer = FileWriterFactory.create("${config['build.dir']}/profile-packages-target.xml")
-        def builder = new MarkupBuilder(writer)
-
-        def targetName = 'profilesPackageRetrieve'
-
-        builder.project('xmlns:sf': 'antlib:com.salesforce', 'default': targetName) {
-            'import'(file: '../ant-includes/setup-target.xml')
-
-            target(name: targetName, depends: '-setUpMetadataDir') {
-                groupedFileProperties.each { type, fileProperties ->
-                    def retrieveTarget = "${config['build.dir']}/profile-packages-metadata/$type"
-
-                    forceService.withValidMetadataType(type) {
-                        mkdir(dir: retrieveTarget)
-
-                        'sf:retrieve'(
-                            unpackaged: profilePackageXmlPath(type),
-                            retrieveTarget: retrieveTarget,
-                            username: '${sf.username}',
-                            password: '${sf.password}',
-                            serverurl: '${sf.serverurl}',
-                            pollWaitMillis: '${sf.pollWaitMillis}',
-                            maxPoll: '${sf.maxPoll}'
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    */
 }
 
 /*

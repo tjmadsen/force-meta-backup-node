@@ -20,6 +20,7 @@
     "nforce-metadata": "^1.0.5",
     "nforce-tooling": "0.0.4",
     "xml": "1.0.0",
-    "xmlbuilder": "4.2.0"
+    "xmlbuilder": "4.2.0",
+    "xmlmerge-js": "0.2.5"
   }
 }
