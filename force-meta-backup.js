@@ -4,12 +4,29 @@ var builder = require('xmlbuilder');
 var nforce = require('nforce'),
   meta = require('nforce-metadata')(nforce);
 
+
+var Promise  = require('bluebird');
 var _        = require('lodash');
 var util     = require('util');
 var fs       = require('fs');
 
 var connection = require('./connection-info.js');
 
+
+var promiseWhile = function(condition, action) {
+    var resolver = Promise.defer();
+
+    var loop = function() {
+        if (!condition()) return resolver.resolve();
+        return Promise.cast(action())
+            .then(loop)
+            .catch(resolver.reject);
+    };
+
+    process.nextTick(loop);
+
+    return resolver.promise;
+};
 
 var bulkMetadataManifestBuilder = function(){
     
@@ -111,7 +128,7 @@ var bulkMetadataManifestBuilder = function(){
             bulkRetrieve.att('username', '${sf.username}');
             bulkRetrieve.att('password', '${sf.password}');
             bulkRetrieve.att('serverurl', '${sf.serverurl}');
-            if(TYPES[i] == 'CustomMetadata' || TYPES[i] == 'InstalledPackage'){
+            if(TYPES[i] == 'CustomMetadata' || TYPES[i] == 'InstalledPackage' || TYPES[i] == 'Role' || TYPES[i] == 'Queue' || TYPES[i] == 'CustomLabels' || TYPES[i] == 'Group'){
                 bulkRetrieve.att('batchSize', '${small.batchSize}');
                 bulkRetrieve.att('pollWaitMillis', '${small.pollWaitMillis}');
                 bulkRetrieve.att('maxPoll', '${small.maxPoll}');
@@ -131,15 +148,13 @@ var bulkMetadataManifestBuilder = function(){
 
         console.log(BUILD_XML+" was saved!");
     }); 
-}
+};
 
 var folders = function(){
-
-}
+};
 
 var miscMetadataManifestBuilder = function(){
-
-}
+};
 
 var profilesMetadataManifestBuilder = function(){
 
@@ -178,70 +193,79 @@ var profilesMetadataManifestBuilder = function(){
 
     var items = {};
 
+    var count = 0;
+    var stop = TYPES.length;
+
     org.authenticate().then(function(){
-        return org.meta.listMetadata({
-            queries: TYPES
-        }); 
+        
+        for(var i in TYPES){
+            getLists(TYPES[i]);
+        }
+            
+        
     }).then(function(meta) {
-        _.each(meta, function(r) {
-            if(!(r.type in items)){
-                items[r.type] = [];
-            }
-            if(r.type == 'Layout' && !('RecordType' in PERMISSON_TYPES)){
-                PERMISSON_TYPES.push('RecordType')
-            }
-            items[r.type].push(r);
-            //console.log(r.type + ': ' + r.fullName + ' (' + r.fileName + ')');
-        });
-
-        _.each(items, function(val, key) {
-            items[key] = _.sortBy(val, ["namespacePrefix", "fullName"]);
-        });
-
-        writePackageXmlForType();
+        
+        
     }).error(function(err) {
         console.error(err);
     });
 
+    var getLists = function(type){
+        org.meta.listMetadata(TYPES[]).then(function(){
+            _.each(meta, function(r) {
+                if(!(r.type in items)){
+                    items[r.type] = [];
+                }
+                if(r.type == 'Layout' && !('RecordType' in PERMISSON_TYPES)){
+                    PERMISSON_TYPES.push('RecordType')
+                }
+                items[r.type].push(r);
+                //console.log(r.type + ': ' + r.fullName + ' (' + r.fileName + ')');
+            });
+
+            _.each(items, function(val, key) {
+                items[key] = _.sortBy(val, ["namespacePrefix", "fullName"]);
+                writePackageXmlForType(key);
+            });
+        });
+    }
 
 
-    var writePackageXmlForType = function() {
+    var writePackageXmlForType = function(type) {
 
         var root = builder.create('Package', {version: '1.0', encoding: 'UTF-8'}, {}, {headless:false});
 
         root.att('xmlns','http://soap.sforce.com/2006/04/metadata');
 
-        _.each(items,function(list, type){
-            var target = root.ele('types');
-            _.each(list,function(item, i){
-                if (type == 'Layout' && item.namespacePrefix && item.namespacePrefix !== null && item.namespacePrefix != '') {
-                    var namespace = item.namespacePrefix + '__'
-                    var seperator = '-'
-                    item.fullName = item.fullName.replace(seperator, seperator + namespace)
-                }
-                target.ele('members',{}, item.fullName);    
-            });
-            target.ele('name',{}, type);
-
-            _.each(PERMISSON_TYPES,function(type,i){
-                var target = root.ele('types');
-                target.ele('members',{}, '*');    
-                target.ele('name',{}, type);
-            });
-
-            root.ele('version',{}, '35.0');
-
-            var xmlString = root.end({ pretty: true, indent: '  ', newline: '\n' });
-            
-            fs.writeFile("build/profile-packages/"+type+".xml", xmlString, function(err) {
-                if(err) {
-                    return console.log(err);
-                }
-
-                console.log("build/profile-packages/"+type+".xml"+" was saved!");
-            }); 
+        var list = items[type];
+        var target = root.ele('types');
+        _.each(list,function(item, i){
+            if (type == 'Layout' && item.namespacePrefix && item.namespacePrefix !== null && item.namespacePrefix != '') {
+                var namespace = item.namespacePrefix + '__'
+                var seperator = '-'
+                item.fullName = item.fullName.replace(seperator, seperator + namespace)
+            }
+            target.ele('members',{}, item.fullName);    
         });
-        writeBuildXml();
+        target.ele('name',{}, type);
+
+        _.each(PERMISSON_TYPES,function(type,i){
+            var target = root.ele('types');
+            target.ele('members',{}, '*');    
+            target.ele('name',{}, type);
+        });
+
+        root.ele('version',{}, '35.0');
+
+        var xmlString = root.end({ pretty: true, indent: '  ', newline: '\n' });
+        
+        fs.writeFile("build/profile-packages/"+type+".xml", xmlString, function(err) {
+            if(err) {
+                return console.log(err);
+            }
+
+            console.log("build/profile-packages/"+type+".xml"+" was saved!");
+        }); 
     };
 
     var writeBuildXml = function(){    
