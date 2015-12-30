@@ -65,8 +65,8 @@ var bulkMetadataManifestBuilder = function(){
         'Queue',
         // 'QuickAction',
         // 'RemoteSiteSetting',
-        'ReportType',
-        'Role',
+        // 'ReportType',
+        // 'Role',
         // 'SamlSsoConfig',
         // 'Scontrol',
         // 'Settings',
@@ -206,13 +206,13 @@ var profilesMetadataManifestBuilder = function(){
                 });
                 items[type] = _.sortBy(items[type], ["namespacePrefix", "fullName"]);
                 writePackageXmlForType(type);
+            }
                 count++;
                 if(count == stop){
                     writeBuildXml();
                 }else{
                     getLists(TYPES[count].type);
                 }
-            }
         }).error(function(err) {
             console.error(err);
         });
