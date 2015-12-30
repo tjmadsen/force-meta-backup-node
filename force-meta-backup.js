@@ -104,14 +104,14 @@ var bulkMetadataManifestBuilder = function(){
         setUpMetadataDir.ele('property').att('name', 'build.metadata.dir').att('value', '${build.dir}/metadata');
         setUpMetadataDir.ele('mkdir').att('dir', '${build.dir}');
 
+    var proxy = root.ele('target').att('name', 'proxy');    
     if(connection.info.proxyHost !== null && connection.info.proxyHost != ''){
-        var proxy = root.ele('target').att('name', 'proxy');
-            proxy.ele('property').att('name','proxy.port').att('value', connection.info.proxyPort);
-            proxy.ele('property').att('name','proxy.host').att('value', connection.info.proxyHost);
-            proxy.ele('setproxy').att('proxyhost', '${proxy.host}').att('proxyport', '${proxy.port}');
+        proxy.ele('property').att('name','proxy.port').att('value', connection.info.proxyPort);
+        proxy.ele('property').att('name','proxy.host').att('value', connection.info.proxyHost);
+        proxy.ele('setproxy').att('proxyhost', '${proxy.host}').att('proxyport', '${proxy.port}');
     }
 
-    var target = root.ele('target').att('name', 'bulkRetrievable').att('depends', '-setUpMetadataDir');
+    var target = root.ele('target').att('name', 'bulkRetrievable').att('depends', '-setUpMetadataDir,proxy');
     for(var i in TYPES){
         var bulkRetrieve = target.ele('sf:bulkRetrieve');
             bulkRetrieve.att('metadataType', TYPES[i]);
@@ -278,15 +278,16 @@ var profilesMetadataManifestBuilder = function(){
             setUpMetadataDir.ele('property').att('name', 'build.profile.metadata.dir').att('value', '${build.dir}/profile-packages-metadata');
             setUpMetadataDir.ele('mkdir').att('dir', '${build.profile.metadata.dir}');
 
+        
+        var proxy = root.ele('target').att('name', 'proxy');    
         if(connection.info.proxyHost !== null && connection.info.proxyHost != ''){
-            var proxy = root.ele('target').att('name', 'proxy');
-                proxy.ele('property').att('name','proxy.port').att('value', connection.info.proxyPort);
-                proxy.ele('property').att('name','proxy.host').att('value', connection.info.proxyHost);
-                proxy.ele('setproxy').att('proxyhost', '${proxy.host}').att('proxyport', '${proxy.port}');
+            proxy.ele('property').att('name','proxy.port').att('value', connection.info.proxyPort);
+            proxy.ele('property').att('name','proxy.host').att('value', connection.info.proxyHost);
+            proxy.ele('setproxy').att('proxyhost', '${proxy.host}').att('proxyport', '${proxy.port}');
         }
 
         
-        var target = root.ele('target').att('name', 'profilesPackageRetrieve').att('depends', '-setUpProfileMetadataDir');
+        var target = root.ele('target').att('name', 'profilesPackageRetrieve').att('depends', '-setUpProfileMetadataDir,proxy');
         _.each(items,function(list, type){
             var bulkRetrieve = target.ele('sf:retrieve');
                 bulkRetrieve.att('unpackaged', "build/profile-packages/"+type+".xml");
