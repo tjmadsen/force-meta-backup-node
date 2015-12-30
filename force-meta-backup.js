@@ -190,6 +190,8 @@ var profilesMetadataManifestBuilder = function(){
     var count = 0;
     var stop = TYPES.length;
 
+    var customObjectChunkSize = 100;
+
     org.authenticate().then(function(){
         getLists(TYPES[count].type);
     }).error(function(err) {
@@ -227,8 +229,8 @@ var profilesMetadataManifestBuilder = function(){
         var seqNum = 0
         var totalNum = 0
 
-        if(type == 'CustomObject' && items[type].length > 300){
-            totalNum = Math.ceil(items[type].length/300);
+        if(type == 'CustomObject' && items[type].length > customObjectChunkSize){
+            totalNum = Math.ceil(items[type].length/customObjectChunkSize);
             seqNum++;
             for(seqNum;seqNum<=totalNum;seqNum++){
                 actuallyWritePackageXmlForType(type, seqNum)
@@ -246,8 +248,8 @@ var profilesMetadataManifestBuilder = function(){
         var end = 0;
         if(seqNum !== null){
             typeName = type + seqNum;
-            start = 0 + (300 * (seqNum-1));
-            end = 300 + (300 * (seqNum-1));
+            start = 0 + (customObjectChunkSize * (seqNum-1));
+            end = customObjectChunkSize + (customObjectChunkSize * (seqNum-1));
             if(end > list.length){
                 end = list.length;
             } 
