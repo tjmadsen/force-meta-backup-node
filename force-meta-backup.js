@@ -198,9 +198,9 @@ var profilesMetadataManifestBuilder = function(){
         types.push({'type':type});
         console.log('Kicking off query for '+type);
         org.meta.listMetadata({'queries':types, 'requestOpts':{timeout: 60000}}).then(function(meta){
-            if(meta !== null){
+            if(typeof meta !== 'undefined' && meta !== null){
                 items[type] = [];
-                console.log('Resurted Results: '+meta.length);
+                console.log('Returned Results: '+meta.length);
                 _.each(meta, function(r) {
                     items[type].push(r);
                 });
