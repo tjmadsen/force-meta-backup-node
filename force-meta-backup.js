@@ -278,6 +278,13 @@ var profilesMetadataManifestBuilder = function(){
             setUpMetadataDir.ele('property').att('name', 'build.profile.metadata.dir').att('value', '${build.dir}/profile-packages-metadata');
             setUpMetadataDir.ele('mkdir').att('dir', '${build.profile.metadata.dir}');
 
+        if(connection.info.proxyHost !== null && connection.info.proxyHost != ''){
+            var proxy = root.ele('target').att('name', 'proxy').att('depends', 'probe-proxy');
+                proxy.ele('property').att('name','proxy.port').att('value', connection.info.proxyPort);
+                proxy.ele('property').att('name','proxy.host').att('value', connection.info.proxyHost);
+                proxy.ele('setproxy').att('proxyhost', '${proxy.host}').att('proxyport', '${proxy.port}');
+        }
+
         
         var target = root.ele('target').att('name', 'profilesPackageRetrieve').att('depends', '-setUpProfileMetadataDir');
         _.each(items,function(list, type){
