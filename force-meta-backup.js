@@ -35,8 +35,8 @@ var bulkMetadataManifestBuilder = function(){
         // 'CorsWhitelistOrigin',
         // 'CustomApplicationComponent',
         // 'CustomFeedFilter',
-        'CustomLabels',
-        'CustomMetadata',
+        // 'CustomLabels',
+        // 'CustomMetadata',
         // 'CustomPageWebLink',
         // 'CustomSite',
         // 'DataCategoryGroup',
@@ -45,10 +45,10 @@ var bulkMetadataManifestBuilder = function(){
         // 'EscalationRules',
         // 'FlexiPage',
         // 'FlowDefinition',
-        'Group',
+        // 'Group',
         // 'HomePageComponent',
         // 'HomePageLayout',
-        'InstalledPackage',
+        // 'InstalledPackage',
         // 'LiveChatAgentConfig',
         // 'LiveChatButton',
         // 'LiveChatDeployment',
@@ -62,7 +62,7 @@ var bulkMetadataManifestBuilder = function(){
         // 'PlatformCachePartition',
         // 'Portal',
         // 'PostTemplate',
-        'Queue',
+        // 'Queue',
         // 'QuickAction',
         // 'RemoteSiteSetting',
         // 'ReportType',
@@ -70,7 +70,7 @@ var bulkMetadataManifestBuilder = function(){
         // 'SamlSsoConfig',
         // 'Scontrol',
         // 'Settings',
-        'SharingRules',
+        // 'SharingRules',
         // 'SharingSet',
         // 'SiteDotCom',
         // 'Skill',
@@ -83,7 +83,7 @@ var bulkMetadataManifestBuilder = function(){
         // 'Territory2Settings',
         // 'Territory2Type',
         // 'TransactionSecurityPolicy',
-        'Workflow',
+        // 'Workflow',
         // 'XOrgHub',
         // 'XOrgHubSharedObject'
     ]
@@ -105,7 +105,7 @@ var bulkMetadataManifestBuilder = function(){
         setUpMetadataDir.ele('mkdir').att('dir', '${build.dir}');
 
     var proxy = root.ele('target').att('name', 'proxy');    
-    if(connection.info.proxyHost !== null && connection.info.proxyHost != ''){
+    if(connection.info.proxyHost !== null && connection.info.proxyHost !== ''){
         proxy.ele('property').att('name','proxy.port').att('value', connection.info.proxyPort);
         proxy.ele('property').att('name','proxy.host').att('value', connection.info.proxyHost);
         proxy.ele('setproxy').att('proxyhost', '${proxy.host}').att('proxyport', '${proxy.port}');
@@ -277,10 +277,14 @@ var profilesMetadataManifestBuilder = function(){
         var setUpMetadataDir = root.ele('target').att('name', '-setUpProfileMetadataDir').att('depends', '-setUp')
             setUpMetadataDir.ele('property').att('name', 'build.profile.metadata.dir').att('value', '${build.dir}/profile-packages-metadata');
             setUpMetadataDir.ele('mkdir').att('dir', '${build.profile.metadata.dir}');
+        _.each(items,function(list, type){
+            setUpMetadataDir.ele('property').att('name', 'build.profile.metadata.'+type+'.dir').att('value', '${build.dir}/profile-packages-metadata/'+type);
+            setUpMetadataDir.ele('mkdir').att('dir', '${build.profile.metadata.'+type+'.dir}');
+        });
 
         
         var proxy = root.ele('target').att('name', 'proxy');    
-        if(connection.info.proxyHost !== null && connection.info.proxyHost != ''){
+        if(connection.info.proxyHost !== null && connection.info.proxyHost !== ''){
             proxy.ele('property').att('name','proxy.port').att('value', connection.info.proxyPort);
             proxy.ele('property').att('name','proxy.host').att('value', connection.info.proxyHost);
             proxy.ele('setproxy').att('proxyhost', '${proxy.host}').att('proxyport', '${proxy.port}');
@@ -291,7 +295,7 @@ var profilesMetadataManifestBuilder = function(){
         _.each(items,function(list, type){
             var bulkRetrieve = target.ele('sf:retrieve');
                 bulkRetrieve.att('unpackaged', "build/profile-packages/"+type+".xml");
-                bulkRetrieve.att('retrieveTarget', '${build.profile.metadata.dir}');
+                bulkRetrieve.att('retrieveTarget', '${build.profile.metadata.'+type+'.dir}/');
                 bulkRetrieve.att('username', '${sf.username}');
                 bulkRetrieve.att('password', '${sf.password}');
                 bulkRetrieve.att('serverurl', '${sf.serverurl}');
