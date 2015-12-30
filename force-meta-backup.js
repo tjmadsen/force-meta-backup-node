@@ -119,11 +119,11 @@ var bulkMetadataManifestBuilder = function(){
             bulkRetrieve.att('username', '${sf.username}');
             bulkRetrieve.att('password', '${sf.password}');
             bulkRetrieve.att('serverurl', '${sf.serverurl}');
-            if(TYPES[i] == 'CustomMetadata' || TYPES[i] == 'InstalledPackage' || TYPES[i] == 'Role' || TYPES[i] == 'Queue' || TYPES[i] == 'CustomLabels' || TYPES[i] == 'Group'){
+            // if(TYPES[i] == 'CustomMetadata' || TYPES[i] == 'InstalledPackage' || TYPES[i] == 'Role' || TYPES[i] == 'Queue' || TYPES[i] == 'CustomLabels' || TYPES[i] == 'Group'){
                 bulkRetrieve.att('batchSize', '${small.batchSize}');
                 bulkRetrieve.att('pollWaitMillis', '${small.pollWaitMillis}');
                 bulkRetrieve.att('maxPoll', '${small.maxPoll}');
-            }
+            // }
             if(TYPES[i] == 'StaticResource'){
                 bulkRetrieve.att('pollWaitMillis', '${sr.pollWaitMillis}');
                 bulkRetrieve.att('maxPoll', '${sr.maxPoll}');
