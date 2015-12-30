@@ -111,7 +111,7 @@ var bulkMetadataManifestBuilder = function(){
         proxy.ele('setproxy').att('proxyhost', '${proxy.host}').att('proxyport', '${proxy.port}');
     }
 
-    var target = root.ele('target').att('name', 'bulkRetrievable').att('depends', '-setUpMetadataDir,proxy');
+    var target = root.ele('target').att('name', 'bulkRetrievable').att('depends', '-setUpMetadataDir');
     for(var i in TYPES){
         var bulkRetrieve = target.ele('sf:bulkRetrieve');
             bulkRetrieve.att('metadataType', TYPES[i]);
@@ -287,7 +287,7 @@ var profilesMetadataManifestBuilder = function(){
         }
 
         
-        var target = root.ele('target').att('name', 'profilesPackageRetrieve').att('depends', '-setUpProfileMetadataDir,proxy');
+        var target = root.ele('target').att('name', 'profilesPackageRetrieve').att('depends', '-setUpProfileMetadataDir');
         _.each(items,function(list, type){
             var bulkRetrieve = target.ele('sf:retrieve');
                 bulkRetrieve.att('unpackaged', "build/profile-packages/"+type+".xml");
