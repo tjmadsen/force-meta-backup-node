@@ -106,9 +106,9 @@ var bulkMetadataManifestBuilder = function(){
 
     var proxy = root.ele('target').att('name', 'proxy');    
     if(connection.info.proxyHost !== null && connection.info.proxyHost !== ''){
-        proxy.ele('property').att('name','proxy.port').att('value', connection.info.proxyPort);
-        proxy.ele('property').att('name','proxy.host').att('value', connection.info.proxyHost);
-        proxy.ele('setproxy').att('proxyhost', '${proxy.host}').att('proxyport', '${proxy.port}');
+        // proxy.ele('property').att('name','proxy.port').att('value', connection.info.proxyPort);
+        // proxy.ele('property').att('name','proxy.host').att('value', connection.info.proxyHost);
+        // proxy.ele('setproxy').att('proxyhost', '${proxy.host}').att('proxyport', '${proxy.port}');
     }
 
     var target = root.ele('target').att('name', 'bulkRetrievable').att('depends', '-setUpMetadataDir');
@@ -184,6 +184,9 @@ var profilesMetadataManifestBuilder = function(){
 
     var items = {};
 
+
+    var typeFiles = [];
+
     var count = 0;
     var stop = TYPES.length;
 
@@ -221,26 +224,59 @@ var profilesMetadataManifestBuilder = function(){
 
     var writePackageXmlForType = function(type) {
 
-        var root = builder.create('Package', {version: '1.0', encoding: 'UTF-8'}, {}, {headless:false});
+        var seqNum = 0
+        var totalNum = 0
 
-        root.att('xmlns','http://soap.sforce.com/2006/04/metadata');
+        if(type == 'CustomObject' && items[type].length > 300){
+            totalNum = Math.ceil(items[type].length/300);
+            seqNum++;
+            for(seqNum;seqNum<=totalNum;seqNum++){
+                actuallyWritePackageXmlForType(type, seqNum)
+            }
+        }else{
+            actuallyWritePackageXmlForType(type, null);
+        }
 
+    };
+
+    var actuallyWritePackageXmlForType = function(type, seqNum){
         var list = items[type];
+        var typeName = type;
+        var start = 0;
+        var end = 0;
+        if(seqNum !== null){
+            typeName = type + seqNum;
+            start = 0 + (300 * (seqNum-1));
+            end = 300 + (300 * (seqNum-1));
+            if(end > list.length){
+                end = list.length;
+            } 
+        }else{
+            end = list.length;
+        }
+        typeFiles.push(typeName);
+
+
+        var root = builder.create('Package', {version: '1.0', encoding: 'UTF-8'}, {}, {headless:false});
+        root.att('xmlns','http://soap.sforce.com/2006/04/metadata');
         var target = root.ele('types');
-        _.each(list,function(item, i){
+
+        console.log('SeqNum:'+seqNum+'  Start:'+start+'  End:'+end+'  Length:'+list.length);
+        for(var i = start;i<end;i++){
+            var item = list[i];
             if (type == 'Layout' && item.namespacePrefix && item.namespacePrefix !== null && item.namespacePrefix != '') {
                 var namespace = item.namespacePrefix + '__'
                 var seperator = '-'
                 item.fullName = item.fullName.replace(seperator, seperator + namespace)
             }
             target.ele('members',{}, item.fullName);    
-        });
+        }
         target.ele('name',{}, type);
 
-        _.each(PERMISSON_TYPES,function(type,i){
+        _.each(PERMISSON_TYPES,function(ptype,i){
             var target = root.ele('types');
             target.ele('members',{}, '*');    
-            target.ele('name',{}, type);
+            target.ele('name',{}, ptype);
         });
         if(type == 'Layout'){
             var target = root.ele('types');
@@ -253,12 +289,12 @@ var profilesMetadataManifestBuilder = function(){
 
         var xmlString = root.end({ pretty: true, indent: '  ', newline: '\n' });
         
-        fs.writeFile("build/profile-packages/"+type+".xml", xmlString, function(err) {
+        fs.writeFile("build/profile-packages/"+typeName+".xml", xmlString, function(err) {
             if(err) {
                 return console.log(err);
             }
 
-            console.log("build/profile-packages/"+type+".xml"+" was saved!");
+            console.log("build/profile-packages/"+typeName+".xml"+" was saved!");
         }); 
     };
 
@@ -277,7 +313,7 @@ var profilesMetadataManifestBuilder = function(){
         var setUpMetadataDir = root.ele('target').att('name', '-setUpProfileMetadataDir').att('depends', '-setUp')
             setUpMetadataDir.ele('property').att('name', 'build.profile.metadata.dir').att('value', '${build.dir}/profile-packages-metadata');
             setUpMetadataDir.ele('mkdir').att('dir', '${build.profile.metadata.dir}');
-        _.each(items,function(list, type){
+        _.each(typeFiles,function(type, i){
             setUpMetadataDir.ele('property').att('name', 'build.profile.metadata.'+type+'.dir').att('value', '${build.dir}/profile-packages-metadata/'+type);
             setUpMetadataDir.ele('mkdir').att('dir', '${build.profile.metadata.'+type+'.dir}');
         });
@@ -285,14 +321,14 @@ var profilesMetadataManifestBuilder = function(){
         
         var proxy = root.ele('target').att('name', 'proxy');    
         if(connection.info.proxyHost !== null && connection.info.proxyHost !== ''){
-            proxy.ele('property').att('name','proxy.port').att('value', connection.info.proxyPort);
-            proxy.ele('property').att('name','proxy.host').att('value', connection.info.proxyHost);
-            proxy.ele('setproxy').att('proxyhost', '${proxy.host}').att('proxyport', '${proxy.port}');
+            // proxy.ele('property').att('name','proxy.port').att('value', connection.info.proxyPort);
+            // proxy.ele('property').att('name','proxy.host').att('value', connection.info.proxyHost);
+            // proxy.ele('setproxy').att('proxyhost', '${proxy.host}').att('proxyport', '${proxy.port}');
         }
 
         
         var target = root.ele('target').att('name', 'profilesPackageRetrieve').att('depends', '-setUpProfileMetadataDir');
-        _.each(items,function(list, type){
+        _.each(typeFiles,function(type, i){
             var bulkRetrieve = target.ele('sf:retrieve');
                 bulkRetrieve.att('unpackaged', "build/profile-packages/"+type+".xml");
                 bulkRetrieve.att('retrieveTarget', '${build.profile.metadata.'+type+'.dir}/');
