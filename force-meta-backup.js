@@ -159,15 +159,15 @@ var miscMetadataManifestBuilder = function(){
 var profilesMetadataManifestBuilder = function(){
 
     const TYPES = [
-        // { type: 'ApexClass' },
-        // { type: 'ApexPage' },
+        { type: 'ApexClass' },
+        { type: 'ApexPage' },
         { type: 'CustomApplication' },
-        // { type: 'CustomObject' },
-        // { type: 'CustomObjectTranslation' },
-        // { type: 'CustomPermission' },
-        { type: 'CustomTab' }
-        // { type: 'ExternalDataSource' },
-        // { type: 'Layout' }
+        { type: 'CustomObject' },
+        { type: 'CustomObjectTranslation' },
+        { type: 'CustomPermission' },
+        { type: 'CustomTab' },
+        { type: 'ExternalDataSource' },
+        { type: 'Layout' }
     ]
 
     var PERMISSON_TYPES = [
@@ -209,7 +209,7 @@ var profilesMetadataManifestBuilder = function(){
         var types = [];
         types.push({'type':type});
         console.log('Kicking off query for '+type);
-        org.meta.listMetadata({'queries':types}).then(function(meta){
+        org.meta.listMetadata({'queries':types, 'requestOpts':{timeout: 60000}}).then(function(meta){
             console.log('Resurted Results: '+meta.length);
             _.each(meta, function(r) {
                 items[type].push(r);
