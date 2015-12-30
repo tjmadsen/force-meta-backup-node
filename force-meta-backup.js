@@ -105,7 +105,7 @@ var bulkMetadataManifestBuilder = function(){
         setUpMetadataDir.ele('mkdir').att('dir', '${build.dir}');
 
     if(connection.info.proxyHost !== null && connection.info.proxyHost != ''){
-        var proxy = root.ele('target').att('name', 'proxy').att('depends', 'probe-proxy');
+        var proxy = root.ele('target').att('name', 'proxy');
             proxy.ele('property').att('name','proxy.port').att('value', connection.info.proxyPort);
             proxy.ele('property').att('name','proxy.host').att('value', connection.info.proxyHost);
             proxy.ele('setproxy').att('proxyhost', '${proxy.host}').att('proxyport', '${proxy.port}');
@@ -188,9 +188,6 @@ var profilesMetadataManifestBuilder = function(){
     var stop = TYPES.length;
 
     org.authenticate().then(function(){
-        for(var i in TYPES){
-            items[TYPES[i].type] = [];
-        }
         getLists(TYPES[count].type);
     }).error(function(err) {
         console.error(err);
@@ -201,17 +198,20 @@ var profilesMetadataManifestBuilder = function(){
         types.push({'type':type});
         console.log('Kicking off query for '+type);
         org.meta.listMetadata({'queries':types, 'requestOpts':{timeout: 60000}}).then(function(meta){
-            console.log('Resurted Results: '+meta.length);
-            _.each(meta, function(r) {
-                items[type].push(r);
-            });
-            items[type] = _.sortBy(items[type], ["namespacePrefix", "fullName"]);
-            writePackageXmlForType(type);
-            count++;
-            if(count == stop){
-                writeBuildXml();
-            }else{
-                getLists(TYPES[count].type);
+            if(meta !== null){
+                items[type] = [];
+                console.log('Resurted Results: '+meta.length);
+                _.each(meta, function(r) {
+                    items[type].push(r);
+                });
+                items[type] = _.sortBy(items[type], ["namespacePrefix", "fullName"]);
+                writePackageXmlForType(type);
+                count++;
+                if(count == stop){
+                    writeBuildXml();
+                }else{
+                    getLists(TYPES[count].type);
+                }
             }
         }).error(function(err) {
             console.error(err);
