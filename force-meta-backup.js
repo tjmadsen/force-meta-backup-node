@@ -5,7 +5,6 @@ var nforce = require('nforce'),
   meta = require('nforce-metadata')(nforce);
 
 
-var Promise  = require('bluebird');
 var _        = require('lodash');
 var util     = require('util');
 var fs       = require('fs');
@@ -13,20 +12,6 @@ var fs       = require('fs');
 var connection = require('./connection-info.js');
 
 
-var promiseWhile = function(condition, action) {
-    var resolver = Promise.defer();
-
-    var loop = function() {
-        if (!condition()) return resolver.resolve();
-        return Promise.cast(action())
-            .then(loop)
-            .catch(resolver.reject);
-    };
-
-    process.nextTick(loop);
-
-    return resolver.promise;
-};
 
 var bulkMetadataManifestBuilder = function(){
     
@@ -115,11 +100,17 @@ var bulkMetadataManifestBuilder = function(){
     var setup = root.ele('target').att('name', '-setUp');
         setup.ele('mkdir').att('dir', '${build.dir}');
 
-    var setUpMetadataDir = root.ele('target').att('name', '-setUpMetadataDir').att('depends', '-setUp')
+    var setUpMetadataDir = root.ele('target').att('name', '-setUpMetadataDir').att('depends', '-setUp');
         setUpMetadataDir.ele('property').att('name', 'build.metadata.dir').att('value', '${build.dir}/metadata');
         setUpMetadataDir.ele('mkdir').att('dir', '${build.dir}');
 
-    
+    if(connection.info.proxyHost !== null && connection.info.proxyHost != ''){
+        var proxy = root.ele('target').att('name', 'proxy').att('depends', 'probe-proxy');
+            proxy.ele('property').att('name','proxy.port').att('value', connection.info.proxyPort);
+            proxy.ele('property').att('name','proxy.host').att('value', connection.info.proxyHost);
+            proxy.ele('setproxy').att('proxyhost', '${proxy.host}').att('proxyport', '${proxy.port}');
+    }
+
     var target = root.ele('target').att('name', 'bulkRetrievable').att('depends', '-setUpMetadataDir');
     for(var i in TYPES){
         var bulkRetrieve = target.ele('sf:bulkRetrieve');

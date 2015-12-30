@@ -9,5 +9,7 @@ var info = {
 	environment: 'production',  // optional, salesforce 'sandbox' or 'production', production default
 	mode: 'single',
 	username: '',
-	password: ''
+	password: '',
+	proxyHost: '',
+	proxyPort: ''
 }
