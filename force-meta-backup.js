@@ -197,36 +197,29 @@ var profilesMetadataManifestBuilder = function(){
     var stop = TYPES.length;
 
     org.authenticate().then(function(){
-        
         for(var i in TYPES){
+            if(!(TYPES[i] in items)){
+                items[TYPES[i]] = [];
+            }   
             getLists(TYPES[i]);
         }
-            
-        
-    }).then(function(meta) {
-        
-        
     }).error(function(err) {
         console.error(err);
     });
 
     var getLists = function(type){
-        org.meta.listMetadata(TYPES[]).then(function(){
+        org.meta.listMetadata(type).then(function(){
             _.each(meta, function(r) {
-                if(!(r.type in items)){
-                    items[r.type] = [];
-                }
-                if(r.type == 'Layout' && !('RecordType' in PERMISSON_TYPES)){
-                    PERMISSON_TYPES.push('RecordType')
-                }
                 items[r.type].push(r);
-                //console.log(r.type + ': ' + r.fullName + ' (' + r.fileName + ')');
             });
-
-            _.each(items, function(val, key) {
-                items[key] = _.sortBy(val, ["namespacePrefix", "fullName"]);
-                writePackageXmlForType(key);
-            });
+            items[type] = _.sortBy(val, ["namespacePrefix", "fullName"]);
+            writePackageXmlForType(key);
+            count++;
+            if(count == stop){
+                writeBuildXml();
+            }
+        }).error(function(err) {
+            console.error(err);
         });
     }
 
@@ -254,6 +247,12 @@ var profilesMetadataManifestBuilder = function(){
             target.ele('members',{}, '*');    
             target.ele('name',{}, type);
         });
+        if(type == 'Layout'){
+            var target = root.ele('types');
+            target.ele('members',{}, '*');    
+            target.ele('name',{}, 'RecordType');
+        }
+                
 
         root.ele('version',{}, '35.0');
 
