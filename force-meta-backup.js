@@ -165,7 +165,7 @@ var profilesMetadataManifestBuilder = function(){
         // { type: 'CustomObject' },
         // { type: 'CustomObjectTranslation' },
         // { type: 'CustomPermission' },
-        { type: 'CustomTab' },
+        { type: 'CustomTab' }
         // { type: 'ExternalDataSource' },
         // { type: 'Layout' }
     ]
@@ -198,25 +198,29 @@ var profilesMetadataManifestBuilder = function(){
 
     org.authenticate().then(function(){
         for(var i in TYPES){
-            if(!(TYPES[i] in items)){
-                items[TYPES[i]] = [];
-            }   
-            getLists(TYPES[i]);
+            items[TYPES[i].type] = [];
         }
+        getLists(TYPES[count].type);
     }).error(function(err) {
         console.error(err);
     });
 
     var getLists = function(type){
-        org.meta.listMetadata(type).then(function(){
+        var types = [];
+        types.push({'type':type});
+        console.log('Kicking off query for '+type);
+        org.meta.listMetadata({'queries':types}).then(function(meta){
+            console.log('Resurted Results: '+meta.length);
             _.each(meta, function(r) {
-                items[r.type].push(r);
+                items[type].push(r);
             });
-            items[type] = _.sortBy(val, ["namespacePrefix", "fullName"]);
-            writePackageXmlForType(key);
+            items[type] = _.sortBy(items[type], ["namespacePrefix", "fullName"]);
+            writePackageXmlForType(type);
             count++;
             if(count == stop){
                 writeBuildXml();
+            }else{
+                getLists(TYPES[count].type);
             }
         }).error(function(err) {
             console.error(err);
