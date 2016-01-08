@@ -26,6 +26,20 @@
     </sequential>
   </macrodef>
 
+  <macrodef name="forceMetaMerge">
+    <sequential>
+      <property name="force.meta.backup.script" value="force-meta-merge.js" />
+
+      <exec osfamily="unix" executable="node"  failonerror="true">
+        <arg line="${force.meta.backup.script}" />
+      </exec>
+
+      <exec osfamily="windows" executable="cmd" failonerror="true">
+        <arg line="/c node ${force.meta.backup.script}" />
+      </exec>
+    </sequential>
+  </macrodef>
+
   <target name="clean">
     <delete dir="${build.dir}" />
   </target>
@@ -42,7 +56,7 @@
     <ant antfile="${build.dir}/folders-build.xml" />
   </target>
 
-  <target name="bulkRetrieveOther" depends="generatePackageXmlAndBuildXml">
+  <target name="bulkRetrieveOther" depends="generatePackageXmlAndBuildXml, -setUpMetadataDir">
     <ant antfile="${build.dir}/profile-packages-target.xml" />
   </target>
 
@@ -61,6 +75,7 @@
     <forceMetaBackup args="--build-xml-merge-target" />
     <ant antfile="${build.dir}/profile-packages-merge-target.xml" />
   </target>
+
 
   <target name="-sfRetrieve">
     <echo>Retrieving ${unpackaged}</echo>

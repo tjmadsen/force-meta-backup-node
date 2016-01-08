@@ -15,10 +15,12 @@
     "archiver": "^0.16.0",
     "bluebird": "^2.10.2",
     "delayed": "^1.0.1",
+    "fs-extra": "0.26.4",
     "lodash": "^3.5.0",
     "nforce": "^1.2.3",
     "nforce-metadata": "^1.0.5",
     "nforce-tooling": "0.0.4",
+    "path": "0.12.7",
     "xml": "1.0.0",
     "xmlbuilder": "4.2.0",
     "xmlmerge-js": "0.2.5"

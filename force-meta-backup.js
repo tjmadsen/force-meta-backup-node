@@ -99,10 +99,12 @@ var bulkMetadataManifestBuilder = function(){
 
     var setup = root.ele('target').att('name', '-setUp');
         setup.ele('mkdir').att('dir', '${build.dir}');
+        setup.ele('chmod').att('dir', '${build.dir}').att('perm', '777');
 
     var setUpMetadataDir = root.ele('target').att('name', '-setUpMetadataDir').att('depends', '-setUp');
         setUpMetadataDir.ele('property').att('name', 'build.metadata.dir').att('value', '${build.dir}/metadata');
-        setUpMetadataDir.ele('mkdir').att('dir', '${build.dir}');
+        setUpMetadataDir.ele('mkdir').att('dir', '${build.metadata.dir}');
+        setUpMetadataDir.ele('chmod').att('dir', '${build.metadata.dir}').att('perm', '777');
 
     var proxy = root.ele('target').att('name', 'proxy');    
     if(connection.info.proxyHost !== null && connection.info.proxyHost !== ''){
@@ -247,7 +249,7 @@ var profilesMetadataManifestBuilder = function(){
         var start = 0;
         var end = 0;
         if(seqNum !== null){
-            typeName = type + seqNum;
+            typeName = type + '_' + seqNum;
             start = 0 + (customObjectChunkSize * (seqNum-1));
             end = customObjectChunkSize + (customObjectChunkSize * (seqNum-1));
             if(end > list.length){
@@ -311,13 +313,16 @@ var profilesMetadataManifestBuilder = function(){
 
         var setup = root.ele('target').att('name', '-setUp');
             setup.ele('mkdir').att('dir', '${build.dir}');
+            setup.ele('chmod').att('dir', '${build.dir}').att('perm', '777');
 
         var setUpMetadataDir = root.ele('target').att('name', '-setUpProfileMetadataDir').att('depends', '-setUp')
             setUpMetadataDir.ele('property').att('name', 'build.profile.metadata.dir').att('value', '${build.dir}/profile-packages-metadata');
             setUpMetadataDir.ele('mkdir').att('dir', '${build.profile.metadata.dir}');
+            setUpMetadataDir.ele('chmod').att('dir', '${build.profile.metadata.dir}').att('perm', '777');
         _.each(typeFiles,function(type, i){
             setUpMetadataDir.ele('property').att('name', 'build.profile.metadata.'+type+'.dir').att('value', '${build.dir}/profile-packages-metadata/'+type);
             setUpMetadataDir.ele('mkdir').att('dir', '${build.profile.metadata.'+type+'.dir}');
+            setUpMetadataDir.ele('chmod').att('dir', '${build.profile.metadata.'+type+'.dir}').att('perm', '777');
         });
 
         
@@ -760,19 +765,3 @@ class ProfilesMetadataManifestBuilder {
 bulkMetadataManifestBuilder();  
 
 profilesMetadataManifestBuilder(); 
-
-    // Default Action
-/*
-    def bulk = new BulkMetadataManifestBuilder(forceService, config)
-    bulk.writeBuildXml()
-    
-    def folders = new Folders(forceService, config)
-    folders.writeFolderBulkRetriveXml()
-    folders.writeFoldersPackageXml()
-
-    def misc = new MiscMetadataManifestBuilder(forceService, config)
-    misc.writePackageXml()
-
-    def profiles = new ProfilesMetadataManifestBuilder(forceService, config)
-    profiles.writePackageXml()
-*/
