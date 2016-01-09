@@ -28,14 +28,14 @@
 
   <macrodef name="forceMetaMerge">
     <sequential>
-      <property name="force.meta.backup.script" value="force-meta-merge.js" />
+      <property name="force.meta.merge.script" value="force-meta-merge.js" />
 
       <exec osfamily="unix" executable="node"  failonerror="true">
-        <arg line="${force.meta.backup.script}" />
+        <arg line="${force.meta.merge.script}" />
       </exec>
 
       <exec osfamily="windows" executable="cmd" failonerror="true">
-        <arg line="/c node ${force.meta.backup.script}" />
+        <arg line="/c node ${force.meta.merge.script}" />
       </exec>
     </sequential>
   </macrodef>
@@ -68,7 +68,11 @@
     <antcall target="xmlMergeProfilesAndPermissions" />
   </target>
 
-  <target name="backupMetadata" depends="clean,bulkRetrievable, bulkRetrieveOther">
+  <target name="backupMetadata" depends="clean,bulkRetrievable, bulkRetrieveOther, mergeData">
+  </target>
+
+  <target name="mergeData" depends="-setUp, -setUpMetadataDir">
+    <forceMetaMerge />
   </target>
 
   <target name="xmlMergeProfilesAndPermissions">

@@ -13,7 +13,7 @@ var xmlmerge = require('./lib/xml-merge-node.js');
 //var csv2obj  = require("./node_modules/xmlmerge-js/node_modules/heyutils/csv2obj.js");
 var path     = require("path");
 
-var XmlMergeTargetBuilder = function(){
+var XmlMergeTargetBuilder = function(type){
     var config = '';
     var srcDir = '';
 
@@ -21,8 +21,8 @@ var XmlMergeTargetBuilder = function(){
     srcDir = 'build/profile-packages-metadata';
     // srcDir = 'test';
 
-    tgtDir = 'build/metadata/profiles'
-    // tgtDir = 'test_out/profiles'
+    // tgtDir = 'build/metadata/'+type;
+    tgtDir = 'test_out/'+type;
     
     
     var walk = function(dir, done) {
@@ -67,7 +67,7 @@ var XmlMergeTargetBuilder = function(){
             }
             
         }
-        var profileObjects = {};
+        var objects = {};
 
         var structureFirst = '';
         
@@ -76,15 +76,20 @@ var XmlMergeTargetBuilder = function(){
             break;
         }
 
-        var profiles = [];
+        var names = [];
         for(var j in structureFirst.contents){
-            if(structureFirst.contents[j].type=='dir' && structureFirst.contents[j].name.indexOf("profiles") >= 0  ){
+            if(structureFirst.contents[j].type=='dir' && structureFirst.contents[j].name.indexOf(type) >= 0  ){
                 //console.log('Copying '+structureFirst.name);
                 for(var k in structureFirst.contents[j].contents){
                     var filenameTokens = k.split("/");
                     var filename = filenameTokens[filenameTokens.length-1];
-                    profiles.push(filename);
-                    profileObjects[filename] = xmlmerge.getObj('<?xml version="1.0" encoding="UTF-8"?><Profile xmlns="http://soap.sforce.com/2006/04/metadata"><custom>false</custom></Profile>');
+                    names.push(filename);
+                    if(type == 'profiles'){
+                        objects[filename] = xmlmerge.getObj('<?xml version="1.0" encoding="UTF-8"?><Profile xmlns="http://soap.sforce.com/2006/04/metadata"><custom>false</custom></Profile>');
+                    }else if(type == 'permissionsets'){
+                        objects[filename] = xmlmerge.getObj('<?xml version="1.0" encoding="UTF-8"?><PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><custom>false</custom></PermissionSet>');
+                    }
+                    
                 }
             }
         }
@@ -93,17 +98,17 @@ var XmlMergeTargetBuilder = function(){
 
 
 
-        //Merge Profiles
+        
         fse.ensureDirSync(tgtDir);
         // console.log('Copying Initial Set');
 
-        var mergeOne = function(profile){
+        var mergeOne = function(name){
             for(var i in structure){
                 if(structure[i].type=='dir' && firstFolder != structure[i].name && structure[i].contents ){
                     for(var j in structure[i].contents){
-                        if(structure[i].contents[j].type=='dir' && structure[i].contents[j].name.indexOf("profiles") >= 0  ){
+                        if(structure[i].contents[j].type=='dir' && structure[i].contents[j].name.indexOf(type) >= 0  ){
                             // console.log('Copying '+structure[i].name);
-                            var filename = profiles[n];
+                            var filename = name;
                             var file2Data = fs.readFileSync(structure[i].contents[j].name+'/'+filename);
                             // console.log(structure[i].contents[j].name+'/'+filename);
                             var str2 = file2Data.toString();
@@ -112,28 +117,29 @@ var XmlMergeTargetBuilder = function(){
                             // console.log('Amount being added from '+ structure[i].name+': '+obj2.documentElement.childNodes.length);
                             var config = [
                                 {nodename: 'Profile', attrname: '*'},
+                                {nodename: 'PermissionSet', attrname: '*'},
                                 {nodename: 'custom', attrname: '*'},
                                 {nodename: 'userLicense', attrname: '*'},
                                 {nodename: 'userPermissions', attrname: '*', childnode: 'name'},
                                 {nodename: 'enabled', attrname: '*'},
                                 {nodename: 'name', attrname: '*'}
                             ];
-                            var xml = xmlmerge.mergeObj(profileObjects[filename].documentElement, obj2.documentElement, config);
-                            // console.log(profiles[n]+' Length: '+profileObjects[filename].documentElement.childNodes.length);
+                            var xml = xmlmerge.mergeObj(objects[filename].documentElement, obj2.documentElement, config);
+                            // console.log(name+' Length: '+objects[filename].documentElement.childNodes.length);
                         }
                     }
                 }
             }
-            console.log(profiles[n]+' Length: '+profileObjects[profiles[n]].documentElement.childNodes.length);
-            console.log('Sorting '+profiles[n]);
-            xmlmerge.sortObj(profileObjects[profiles[n]]);
-            console.log('Writing '+profiles[n]);
-            var res = fs.writeFileSync(tgtDir+'/'+profiles[n], xmlmerge.getXML(profileObjects[profiles[n]]));
+            console.log(name+' Length: '+objects[name].documentElement.childNodes.length);
+            console.log('Sorting '+name);
+            xmlmerge.sortObj(objects[name]);
+            console.log('Writing '+name);
+            var res = fs.writeFileSync(tgtDir+'/'+name, xmlmerge.getXML(objects[name]));
         }
 
-        for(var n in profiles){
-            console.log('Copying '+profiles[n]);
-            mergeOne(profiles[n]);
+        for(var n in names){
+            console.log('Copying '+names[n]);
+            mergeOne(names[n]);
         }
     }
 
@@ -226,4 +232,5 @@ var XmlMergeTargetBuilder = function(){
     // }
 };
 
-XmlMergeTargetBuilder();
+XmlMergeTargetBuilder('profiles');
+XmlMergeTargetBuilder('permissionsets');
