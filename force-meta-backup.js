@@ -20,8 +20,8 @@ var bulkMetadataManifestBuilder = function(){
     const TYPES = [
         // 'ActionLinkGroupTemplate',
         // 'AnalyticSnapshot',
-        'ApexComponent',
-        'ApexTrigger',
+        // 'ApexComponent',
+        // 'ApexTrigger',
         // 'AppMenu',
         // 'ApprovalProcess',
         // 'ArticleType',

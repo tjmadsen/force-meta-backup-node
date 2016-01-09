@@ -21,8 +21,11 @@
     "nforce-metadata": "^1.0.5",
     "nforce-tooling": "0.0.4",
     "path": "0.12.7",
+    "pretty-data": "0.40.0",
+    "timsort": "0.2.1",
     "xml": "1.0.0",
     "xmlbuilder": "4.2.0",
+    "xmldom": "0.1.19",
     "xmlmerge-js": "0.2.5"
   }
 }
