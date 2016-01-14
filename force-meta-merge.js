@@ -16,13 +16,14 @@ var path     = require("path");
 var XmlMergeTargetBuilder = function(type){
     var config = '';
     var srcDir = '';
+    // console.log('Starting Analysis');
 
     
     srcDir = 'build/profile-packages-metadata';
     // srcDir = 'test';
 
-    // tgtDir = 'build/metadata/'+type;
-    tgtDir = 'test_out/'+type;
+    tgtDir = 'build/metadata/'+type;
+    // tgtDir = 'test_out/'+type;
     
     
     var walk = function(dir, done) {
@@ -49,7 +50,10 @@ var XmlMergeTargetBuilder = function(type){
         });
     };
 
+
     walk(srcDir, function(err, results){
+        // console.log('Starting Merges');
+        // console.log(results);
         mergeAll(results);
     });
     
@@ -65,15 +69,17 @@ var XmlMergeTargetBuilder = function(type){
                 firstFolder = structure[i].name;
                 break;
             }
-            
         }
+
         var objects = {};
 
         var structureFirst = '';
         
         for(var i in structure){
-            structureFirst = structure[i];
-            break;
+            if(structure[i].type=='dir'){
+                structureFirst = structure[i];
+                break;
+            }
         }
 
         var names = [];
@@ -100,7 +106,7 @@ var XmlMergeTargetBuilder = function(type){
 
         
         fse.ensureDirSync(tgtDir);
-        // console.log('Copying Initial Set');
+        console.log('Number of '+type+': '+names.length);
 
         var mergeOne = function(name){
             for(var i in structure){
@@ -125,6 +131,11 @@ var XmlMergeTargetBuilder = function(type){
                                 {nodename: 'name', attrname: '*'}
                             ];
                             var xml = xmlmerge.mergeObj(objects[filename].documentElement, obj2.documentElement, config);
+                            // var snapshot2 = v8.takeSnapshot();
+                            // console.log('HEAP: ' + snapshot1.getHeader());
+                            // console.log('Heap.Object: '+snapshot1.compare(snapshot2).Object);
+                            // console.log('Heap.Text: '+snapshot1.compare(snapshot2).Text);
+                            // console.log('Heap.Element: '+snapshot1.compare(snapshot2).Element);
                             // console.log(name+' Length: '+objects[filename].documentElement.childNodes.length);
                         }
                     }
@@ -135,6 +146,8 @@ var XmlMergeTargetBuilder = function(type){
             xmlmerge.sortObj(objects[name]);
             console.log('Writing '+name);
             var res = fs.writeFileSync(tgtDir+'/'+name, xmlmerge.getXML(objects[name]));
+            objects[name] = '';
+
         }
 
         for(var n in names){

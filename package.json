@@ -27,5 +27,8 @@
     "xmlbuilder": "4.2.0",
     "xmldom": "0.1.19",
     "xmlmerge-js": "0.2.5"
+  },
+  "devDependencies":{
+    "heapdump": "0.3.7"
   }
 }
