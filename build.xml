@@ -44,6 +44,37 @@
     <delete dir="${build.dir}" />
   </target>
 
+  <target name="-prepareForGit">
+    <delete includeemptydirs="true">
+      <fileset dir="${build.dir}/profile-packages" includes="**/*"/>
+    </delete>
+    <delete includeemptydirs="true">
+      <fileset dir="${build.dir}/profile-packages-metadata" includes="**/*"/>
+    </delete>
+    <delete file="${build.dir}/bulk-retrievable-target.xml"/>
+    <delete file="${build.dir}/profile-packages-target.xml"/>
+  </target>
+
+  <macrodef name="gitScript">
+    <attribute name="args" default="" />
+
+    <sequential>
+      <property name="force.git.script.unix" value="git-commit.sh" />
+      <property name="force.git.script.win" value="git-commit.bat" />
+
+      <exec osfamily="unix"  failonerror="true" executable="${force.git.script.unix}"></exec>
+
+      <exec osfamily="windows" executable="cmd" failonerror="true">
+        <arg line="/c node ${force.git.script.win} @{args}" />
+      </exec>
+    </sequential>
+  </macrodef>
+
+  <target name="pushToGit" depends="-prepareForGit">
+    <mkdir dir="${build.dir}"/>
+    <chmod dir="${build.dir}" perm="777"/>
+  </target>
+
   <target name="generatePackageXmlAndBuildXml" depends="-setUp, -setUpMetadataDir">
     <forceMetaBackup />
   </target>
