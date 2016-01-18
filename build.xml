@@ -62,7 +62,9 @@
       <property name="force.git.script.unix" value="git-commit.sh" />
       <property name="force.git.script.win" value="git-commit.bat" />
 
-      <exec osfamily="unix"  failonerror="true" executable="${force.git.script.unix}"></exec>
+      <exec osfamily="unix"  failonerror="true" executable="/bin/bash">
+        <arg line="${force.git.script.unix}" />
+      </exec>
 
       <exec osfamily="windows" executable="cmd" failonerror="true">
         <arg line="/c node ${force.git.script.win} @{args}" />
@@ -71,7 +73,7 @@
   </macrodef>
 
   <target name="pushToGit" depends="-prepareForGit">
-    <pushToGit />
+    <gitScript />
   </target>
 
   <target name="generatePackageXmlAndBuildXml" depends="-setUp, -setUpMetadataDir">

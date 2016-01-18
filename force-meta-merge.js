@@ -19,11 +19,12 @@ var XmlMergeTargetBuilder = function(type){
     // console.log('Starting Analysis');
 
     
-    srcDir = 'build/profile-packages-metadata';
+    var srcDir = 'build/profile-packages-metadata';
     // srcDir = 'test';
 
-    tgtDir = 'build/metadata/'+type;
+    var tgtDir = 'build/metadata';
     // tgtDir = 'test_out/'+type;
+    // tgtDir = 'test_out';
     
     
     var walk = function(dir, done) {
@@ -52,15 +53,13 @@ var XmlMergeTargetBuilder = function(type){
 
 
     walk(srcDir, function(err, results){
-        // console.log('Starting Merges');
-        // console.log(results);
-        mergeAll(results);
+        copyAllNonMergedMetadata(results);
+        mergeAllPermissions(results);
+        
     });
-    
-    
-       
 
-    var mergeAll = function(structure){
+
+    var mergeAllPermissions = function(structure){
         
         //Get first folder
         var firstFolder = '';
@@ -105,7 +104,7 @@ var XmlMergeTargetBuilder = function(type){
 
 
         
-        fse.ensureDirSync(tgtDir);
+        fse.ensureDirSync(tgtDir+'/'+type);
         console.log('Number of '+type+': '+names.length);
 
         var mergeOne = function(name){
@@ -145,7 +144,7 @@ var XmlMergeTargetBuilder = function(type){
             console.log('Sorting '+name);
             xmlmerge.sortObj(objects[name]);
             console.log('Writing '+name);
-            var res = fs.writeFileSync(tgtDir+'/'+name, xmlmerge.getXML(objects[name]));
+            var res = fs.writeFileSync(tgtDir+'/'+type+'/'+name, xmlmerge.getXML(objects[name]));
             objects[name] = '';
 
         }
@@ -156,93 +155,42 @@ var XmlMergeTargetBuilder = function(type){
         }
     }
 
-    var sortAll = function(structure){
-        
+    var copyAllNonMergedMetadata = function(structure){
         for(var i in structure){
-            console.log('Sorting: ');
-            var filenameTokens = i.split("/");
-            var filename = filenameTokens[filenameTokens.length-1];
-            console.log('Sorting: '+filename);
-            var file1Data = fs.readFileSync(tgtDir+'/'+filename);
-            var str1 = file1Data.toString();
-            var xml = xmlmerge.sort(str1);
-            var res = fs.writeFileSync(tgtDir+'/'+filename, xml);
+            if(structure[i].type=='dir' && structure[i].contents ){
+                for(var j in structure[i].contents){
+                    if(structure[i].contents[j].type=='dir' && structure[i].contents[j].name.indexOf('profiles') < 0 && structure[i].contents[j].name.indexOf('permissionsets') < 0  ){
+                        var dirNameTokens = structure[i].contents[j].name.split("/");
+                        var dirName = dirNameTokens[dirNameTokens.length-1];
+                        fse.ensureDirSync(tgtDir+'/'+dirName);
+                        fse.copy(structure[i].contents[j].name, tgtDir+'/'+dirName, {clobber:true}, function (err) {
+                            if (err) {
+                                //return console.error(err)
+                            }
+                            console.log('success!')
+                        });
+                    }
+                }
+            }
         }
-
     }
 
-    // fs.readFile('samples/AndroidManifest.xml', function(err, data) {
-    //     var str1 = data.toString();
 
-    //     fs.readFile('samples/kuaiwan.xml', function(err, data) {
-    //         var str2 = data.toString();
-
-    //         fs.readFile('samples/AndroidManifest.csv', function(err, data) {
-
-    //             config = csv2obj.csv2obj(data.toString());
-
-    //             xmlmerge.merge(str1, str2, config, function (xml) {
-    //                 fs.writeFile('samples/output.xml', xml, function (err) {
-
-    //                 });
-    //             });
-    //         });
-    //     });
-    // });    
-
-    // dir.eachFileRecurse (FileType.FILES) { file ->
-    //     if (file.name ==~ /.+\.profile$/) {
-    //         data.profiles << file.name
-    //     } else if (file.name ==~ /.+\.permissionset/) {
-    //         data.permissionsets <<  file.name
+    // var sortAll = function(structure){
+        
+    //     for(var i in structure){
+    //         console.log('Sorting: ');
+    //         var filenameTokens = i.split("/");
+    //         var filename = filenameTokens[filenameTokens.length-1];
+    //         console.log('Sorting: '+filename);
+    //         var file1Data = fs.readFileSync(tgtDir+'/'+filename);
+    //         var str1 = file1Data.toString();
+    //         var xml = xmlmerge.sort(str1);
+    //         var res = fs.writeFileSync(tgtDir+'/'+filename, xml);
     //     }
+
     // }
 
-    // private writeBuildXml() {
-    //     def writer = FileWriterFactory.create("${config['build.dir']}/profile-packages-merge-target.xml")
-    //     def builder = new MarkupBuilder(writer)
-
-    //     def targetName = 'profilesPackageXmlMerge'
-    //     def metadataDir = "${config['build.dir']}/metadata"
-
-    //     builder.project('default': targetName) {
-    //         'import'(file: '../ant-includes/setup-target.xml')
-
-    //         target(name: targetName) {
-    //             data.each { type, filenames ->
-    //                 def destDir = "$metadataDir/$type"
-    //                 mkdir(dir: destDir)
-
-    //                 filenames.each { filename ->
-    //                     echo "Xml Merging: $filename"
-    //                     xmlmerge(dest: "$destDir/$filename", conf: 'xmlmerge.properties'
-    //                     ) {
-    //                         fileset(dir: srcDir) {
-    //                             include(name: "**/$filename")
-    //                         }
-    //                     }
-    //                 }
-    //             }
-
-    //             // TODO maybe we can dynamically build this list of folders/files to be copied
-    //             copy(todir: metadataDir) {
-    //                 fileset(dir: srcDir) {
-    //                     include(name: '**/classes/*')
-    //                     include(name: '**/pages/*')
-    //                     include(name: '**/applications/*')
-    //                     include(name: '**/objects/*')
-    //                     include(name: '**/objectTranslations/*')
-    //                     include(name: '**/customPermissions/*');
-    //                     include(name: '**/tabs/*')
-    //                     include(name: '**/layouts/*')
-    //                     include(name: '**/dataSources/*')
-    //                 }
-
-    //                 cutdirsmapper(dirs: 1)
-    //             }
-    //         }
-    //     }
-    // }
 };
 
 XmlMergeTargetBuilder('profiles');
