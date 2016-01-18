@@ -71,8 +71,7 @@
   </macrodef>
 
   <target name="pushToGit" depends="-prepareForGit">
-    <mkdir dir="${build.dir}"/>
-    <chmod dir="${build.dir}" perm="777"/>
+    <pushToGit />
   </target>
 
   <target name="generatePackageXmlAndBuildXml" depends="-setUp, -setUpMetadataDir">
@@ -99,7 +98,7 @@
     <antcall target="xmlMergeProfilesAndPermissions" />
   </target>
 
-  <target name="backupMetadata" depends="clean,bulkRetrievable, bulkRetrieveOther, mergeData">
+  <target name="backupMetadata" depends="clean,bulkRetrievable, bulkRetrieveOther, mergeData, pushToGit">
   </target>
 
   <target name="mergeData" depends="-setUp, -setUpMetadataDir">
