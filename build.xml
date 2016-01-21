@@ -40,21 +40,6 @@
     </sequential>
   </macrodef>
 
-  <target name="clean">
-    <delete dir="${build.dir}" />
-  </target>
-
-  <target name="-prepareForGit">
-    <delete includeemptydirs="true">
-      <fileset dir="${build.dir}/profile-packages" includes="**/*"/>
-    </delete>
-    <delete includeemptydirs="true">
-      <fileset dir="${build.dir}/profile-packages-metadata" includes="**/*"/>
-    </delete>
-    <delete file="${build.dir}/bulk-retrievable-target.xml"/>
-    <delete file="${build.dir}/profile-packages-target.xml"/>
-  </target>
-
   <macrodef name="gitScript">
     <attribute name="args" default="" />
 
@@ -71,6 +56,35 @@
       </exec>
     </sequential>
   </macrodef>
+
+  <macrodef name="cleanScript">
+    <sequential>
+      <property name="force.meta.clean.script" value="clean-metadata.js" />
+
+      <exec osfamily="unix" executable="node"  failonerror="true">
+        <arg line="${force.meta.clean.script}" />
+      </exec>
+
+      <exec osfamily="windows" executable="cmd" failonerror="true">
+        <arg line="/c node ${force.meta.clean.script}" />
+      </exec>
+    </sequential>
+  </macrodef>
+
+  <target name="clean">
+    <cleanScript />
+  </target>
+
+  <target name="-prepareForGit">
+    <delete includeemptydirs="true">
+      <fileset dir="${build.dir}/profile-packages" includes="**/*"/>
+    </delete>
+    <delete includeemptydirs="true">
+      <fileset dir="${build.dir}/profile-packages-metadata" includes="**/*"/>
+    </delete>
+    <delete file="${build.dir}/bulk-retrievable-target.xml"/>
+    <delete file="${build.dir}/profile-packages-target.xml"/>
+  </target>
 
   <target name="pushToGit" depends="-prepareForGit">
     <gitScript />
